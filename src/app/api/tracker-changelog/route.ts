@@ -4,7 +4,7 @@ import path from "node:path";
 
 export async function GET() {
   try {
-    const filePath = path.join(process.cwd(), "TRACKER_CHANGELOG.md");
+    const filePath = path.join(/* turbopackIgnore: true */ process.cwd(), "TRACKER_CHANGELOG.md");
     const md = await readFile(filePath, "utf8");
     return new NextResponse(md, {
       status: 200,
@@ -24,4 +24,3 @@ export async function GET() {
     });
   }
 }
-

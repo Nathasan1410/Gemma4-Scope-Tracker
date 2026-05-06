@@ -8,8 +8,9 @@ import { loadStoredState, saveStoredState } from "@/lib/storage";
 import { ScopeCard } from "@/components/ScopeCard";
 import { SegmentAccordion } from "@/components/SegmentAccordion";
 import { ProjectBriefAccordion } from "@/components/ProjectBriefAccordion";
+import { MarkdownBlock } from "@/components/MarkdownBlock";
 
-type TrackerTab = "roadmap" | "phases" | "changelog";
+type TrackerTab = "roadmap" | "phases" | "changelog" | "resources";
 type SyncMode = "loading" | "local" | "shared";
 
 function buildDefaultStatusMap(sections: Section[]) {
@@ -35,6 +36,21 @@ type ChangelogEntry = {
     notes: string[];
   };
 };
+
+type ResourceItem = {
+  id: string;
+  title: string;
+  subtitle: string;
+};
+
+const RESOURCE_ITEMS: ResourceItem[] = [
+  { id: "brand", title: "Brand Guidelines", subtitle: "Swara naming, tone, messaging, and visual direction." },
+  { id: "project-brief", title: "Project Brief", subtitle: "Short product summary and demo flow." },
+  { id: "prd", title: "PRD", subtitle: "Product requirements doc (bloated, but canonical context)." },
+  { id: "scope", title: "Roadmap Scope", subtitle: "Human-readable mirror of Roadmap Progress tab." },
+  { id: "dev-phases", title: "Dev Phases", subtitle: "Human-readable mirror of Development Phases tab." },
+  { id: "tracker-changelog", title: "Tracker Changelog", subtitle: "History of tracker content changes." },
+];
 
 function parseChangelog(md: string): ChangelogEntry[] {
   const lines = md.split(/\r?\n/);
@@ -107,6 +123,9 @@ export default function Home() {
   const [selectedPhaseId, setSelectedPhaseId] = useState<string>(DEV_PHASES[0]?.id ?? "");
   const [changelogEntries, setChangelogEntries] = useState<ChangelogEntry[]>([]);
   const [selectedChangelogId, setSelectedChangelogId] = useState<string>("");
+  const [selectedResourceId, setSelectedResourceId] = useState<string>(RESOURCE_ITEMS[0]?.id ?? "");
+  const [resourceMd, setResourceMd] = useState<string>("");
+  const [resourceLoaded, setResourceLoaded] = useState(false);
   const [showAllPriorities, setShowAllPriorities] = useState(false);
   const [syncMode, setSyncMode] = useState<SyncMode>("loading");
   const [statusById, setStatusById] = useState<Record<string, TaskStatus>>(() =>
@@ -169,6 +188,27 @@ export default function Home() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (activeTab !== "resources") return;
+    let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setResourceLoaded(false);
+    (async () => {
+      try {
+        const res = await fetch(`/api/resource?id=${encodeURIComponent(selectedResourceId)}`, { cache: "no-store" });
+        const md = await res.text();
+        if (!cancelled) setResourceMd(md);
+      } catch {
+        if (!cancelled) setResourceMd("");
+      } finally {
+        if (!cancelled) setResourceLoaded(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, selectedResourceId]);
 
   useEffect(() => {
     saveStoredState({ taskStatusById: statusById, updatedAt: new Date().toISOString() });
@@ -302,6 +342,17 @@ export default function Home() {
                 >
                   Changelog
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("resources")}
+                  className={[
+                    "h-8 rounded-full px-3 text-xs font-semibold transition",
+                    activeTab === "resources" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-50",
+                  ].join(" ")}
+                  aria-pressed={activeTab === "resources"}
+                >
+                  Resource
+                </button>
               </div>
               <button
                 type="button"
@@ -358,6 +409,24 @@ export default function Home() {
                       ))}
                     </div>
                   )
+                ) : activeTab === "resources" ? (
+                  <div className="grid gap-3">
+                    {RESOURCE_ITEMS.map((r) => (
+                      <button
+                        key={r.id}
+                        type="button"
+                        onClick={() => setSelectedResourceId(r.id)}
+                        className={[
+                          "w-full rounded-2xl border p-4 text-left transition",
+                          "bg-white hover:bg-zinc-50",
+                          r.id === selectedResourceId ? "border-zinc-900 ring-2 ring-zinc-900/10" : "border-zinc-200",
+                        ].join(" ")}
+                      >
+                        <div className="text-sm font-semibold text-zinc-900">{r.title}</div>
+                        <div className="mt-1 text-xs leading-5 text-zinc-600">{r.subtitle}</div>
+                      </button>
+                    ))}
+                  </div>
                 ) : activeSections.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-zinc-200 bg-white px-4 py-5 text-sm text-zinc-600">
                     No sections yet. Add them in <span className="font-medium text-zinc-900">{dataFile}</span>.
@@ -428,6 +497,42 @@ export default function Home() {
                     </>
                   );
                 })()
+              ) : activeTab === "resources" ? (
+                <>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="text-lg font-semibold text-zinc-900">
+                        {RESOURCE_ITEMS.find((r) => r.id === selectedResourceId)?.title ?? "Resource"}
+                      </div>
+                      <div className="mt-1 text-sm text-zinc-600">
+                        {RESOURCE_ITEMS.find((r) => r.id === selectedResourceId)?.subtitle ?? ""}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(resourceMd);
+                        } catch {
+                          // ignore
+                        }
+                      }}
+                      className="h-9 shrink-0 rounded-full border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-900 hover:bg-zinc-50"
+                    >
+                      Copy page
+                    </button>
+                  </div>
+
+                  <div className="mt-5 rounded-2xl border border-zinc-200 bg-white p-4">
+                    {!resourceLoaded ? (
+                      <div className="text-xs text-zinc-500">Loading…</div>
+                    ) : resourceMd.trim().length === 0 ? (
+                      <div className="text-sm text-zinc-600">Empty.</div>
+                    ) : (
+                      <MarkdownBlock md={resourceMd} />
+                    )}
+                  </div>
+                </>
               ) : !selectedSection ? (
                 <div className="rounded-2xl border border-dashed border-zinc-200 bg-white px-4 py-5 text-sm text-zinc-600">
                   Pick a section on the left (or add one in <span className="font-medium text-zinc-900">{dataFile}</span>).

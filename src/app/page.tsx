@@ -8,6 +8,7 @@ import { loadStoredState, saveStoredState } from "@/lib/storage";
 import { ScopeCard } from "@/components/ScopeCard";
 import { SegmentAccordion } from "@/components/SegmentAccordion";
 import { ProjectBriefAccordion } from "@/components/ProjectBriefAccordion";
+import { TrackerChangelogAccordion } from "@/components/TrackerChangelogAccordion";
 
 type TrackerTab = "roadmap" | "phases";
 type SyncMode = "loading" | "local" | "shared";
@@ -256,6 +257,7 @@ export default function Home() {
                   </div>
 
                   <div className="mt-5 grid gap-3">
+                    <TrackerChangelogAccordion />
                     <ProjectBriefAccordion />
                     <SegmentAccordion
                       title="Not done yet"

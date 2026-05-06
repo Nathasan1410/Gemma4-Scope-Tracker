@@ -6,6 +6,7 @@ export type Task = {
   id: string;
   title: string;
   note: string;
+  briefMd?: string;
   priority: Priority;
 };
 
@@ -201,4 +202,3 @@ export const SECTIONS: Section[] = [
     ],
   },
 ];
-

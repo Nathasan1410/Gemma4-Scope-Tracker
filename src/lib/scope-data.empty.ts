@@ -6,6 +6,7 @@ export type Task = {
   id: string; // must be stable; used as localStorage key
   title: string;
   note: string;
+  briefMd?: string; // optional markdown shown in per-task accordion
   priority: Priority;
 };
 
@@ -21,4 +22,3 @@ export type Section = {
 // 1) Replace src/lib/scope-data.ts with this file's content, or
 // 2) Change src/app/page.tsx to import from "@/lib/scope-data.empty".
 export const SECTIONS: Section[] = [];
-

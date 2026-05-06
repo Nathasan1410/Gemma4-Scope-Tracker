@@ -169,7 +169,31 @@ export default function Home() {
               <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">Scope Tracker</h1>
               <p className="mt-1 text-sm text-zinc-600">Roadmap and dev phases in one persistent tracker.</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex h-9 rounded-full border border-zinc-200 bg-white p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("roadmap")}
+                  className={[
+                    "h-8 rounded-full px-3 text-xs font-semibold transition",
+                    activeTab === "roadmap" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-50",
+                  ].join(" ")}
+                  aria-pressed={activeTab === "roadmap"}
+                >
+                  Roadmap
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("phases")}
+                  className={[
+                    "h-8 rounded-full px-3 text-xs font-semibold transition",
+                    activeTab === "phases" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-50",
+                  ].join(" ")}
+                  aria-pressed={activeTab === "phases"}
+                >
+                  Phases
+                </button>
+              </div>
               <button
                 type="button"
                 onClick={() => setShowAllPriorities((v) => !v)}
@@ -183,37 +207,10 @@ export default function Home() {
               >
                 {showAllPriorities ? "Showing: P0+P1+P2" : "Showing: P0 only"}
               </button>
+              <span className="inline-flex h-9 items-center rounded-full border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700">
+                {syncMode === "loading" ? "Sync: checking" : syncMode === "shared" ? "Sync: shared" : "Sync: local"}
+              </span>
             </div>
-          </div>
-          <div className="text-xs text-zinc-500">
-            Sync:{" "}
-            <span className="font-medium text-zinc-700">
-              {syncMode === "loading" ? "checking" : syncMode === "shared" ? "shared" : "local only"}
-            </span>
-          </div>
-          <div className="flex w-fit rounded-xl border border-zinc-200 bg-white p-1">
-            <button
-              type="button"
-              onClick={() => setActiveTab("roadmap")}
-              className={[
-                "rounded-lg px-3 py-2 text-xs font-semibold transition",
-                activeTab === "roadmap" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-50",
-              ].join(" ")}
-              aria-pressed={activeTab === "roadmap"}
-            >
-              Roadmap Progress
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("phases")}
-              className={[
-                "rounded-lg px-3 py-2 text-xs font-semibold transition",
-                activeTab === "phases" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-50",
-              ].join(" ")}
-              aria-pressed={activeTab === "phases"}
-            >
-              Development Phases
-            </button>
           </div>
         </header>
 

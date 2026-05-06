@@ -3,23 +3,39 @@
 ## Brand Core
 
 - Product name: `Swara`
-- Internal concept phrase: `Gema Swara`
+- Concept phrase: `Gema Swara` (echoing voice)
 - Technical line: `Powered by Gemma 4`
-- Product category: `Offline-first emergency guidance and distribution system`
+- Product category: Offline-first emergency guidance and distribution system
 
-## Brand Meaning
+## Brand Lore (v0.1)
 
-`Swara` means voice. The concept behind the product is that one working phone becomes one emergency voice, then that voice can spread outward through offline sharing into many copies, many devices, and many backup points.
+Swara begins with a simple belief: in an emergency, people do not need more noise. They need one clear voice.
 
-Core narrative:
+Inspired by the idea of gema and swara, Swara is an echoing voice: a single voice that does not disappear when systems fail, but carries forward. One device becomes one source of guidance. Three nearby devices become a small chorus of support. Nine become a local safety net. Hundreds become a distributed emergency voice network.
 
-> One voice becomes many when the network goes silent.
+Swara is built for the first critical hours after disruption, when internet access may be unstable, responders may be delayed, and people need calm, immediate direction. It is not designed to replace emergency services. It is designed to keep guidance alive until help arrives.
 
-This is not only a survival assistant. It is also a distribution system for emergency guidance, survival packs, app shells, and eventually model packages.
+Powered by Gemma 4, Swara turns ordinary offline devices into resilient points of assistance. Each device can understand, guide, repeat, and back up the others. The system is local-first by design: private when privacy matters, available when the network is gone, and concise when stress is high.
+
+Swara's identity should feel like a beacon, not an alarm: calm but urgent, human but precise, technical but warm.
+
+Core message:
+
+```text
+You are not alone.
+Here is what to do next.
+Pass it on.
+```
+
+## Core Metaphor
+
+```text
+One voice -> many voices -> a resilient network
+```
 
 ## Positioning
 
-Swara is an offline-first emergency assistant for the first 72 hours of a disaster. It is designed for conditions where internet, cloud AI, hotlines, and infrastructure may be unavailable or overloaded.
+Swara is an offline-first emergency guidance system for the first 72 hours of a disaster. It is designed for conditions where internet, cloud AI, hotlines, and emergency services may be unavailable or overloaded.
 
 Primary message:
 
@@ -28,6 +44,10 @@ Primary message:
 Secondary message:
 
 > Guidance can spread locally even when the internet cannot.
+
+## Messaging (Short Version)
+
+Swara is an offline-first emergency guidance system powered by Gemma 4. Inspired by "gema swara," or an echoing voice, Swara turns one local device into a clear source of help and many devices into a distributed emergency voice network. Built for the first critical hours of crisis, Swara delivers calm, concise, safety-first guidance when connectivity, time, and attention are limited.
 
 ## Naming Rules
 
@@ -46,50 +66,46 @@ Do not use as the main product name:
 Reason:
 
 - the brand should stand on its own
-- Gemma should be used as technology attribution, not as the product name
+- Gemma should be used as technology attribution, not the product brand
 
-## Messaging Hierarchy
-
-Preferred:
-
-1. `Swara`
-2. short product description
-3. Gemma attribution
-
-Example:
-
-> Swara is an offline-first emergency guidance and distribution system, powered by Gemma 4.
-
-## Tagline Options
+## Taglines
 
 Primary:
 
 > One voice when the network goes silent.
 
-Secondary:
+Alternatives:
 
-> Guidance that carries through the first 72 hours.
+> Guidance that echoes through the first 72 hours.
 
-Alternative:
+> A calm voice when systems fail.
 
-> One phone. Many backups. Offline survival guidance.
+> One voice. Many backups. Clear next steps.
 
-## Tone
+## Brand Principles
 
-Swara should sound:
+- Calm over panic.
+- Clarity over completeness.
+- Local over dependent.
+- Human over robotic.
+- Networked over isolated.
 
-- calm
-- direct
-- practical
-- trustworthy
-- resilient
+## Tone of Voice
 
-Swara should not sound:
+Swara speaks like a trained, steady helper beside you: direct, reassuring, action-oriented, and clear under stress.
 
-- playful in emergencies
-- overconfident
-- cloud-dependent
-- like a generic AI chatbot
+Do:
+
+- "Move away from the danger."
+- "Do not go back inside."
+- "Apply firm pressure to the bleeding."
+- "Answer one question: are they breathing normally?"
+
+Avoid:
+
+- long, speculative analysis
+- overconfident medical claims
+- sounding like a generic chatbot
 
 ## Visual Direction
 
@@ -99,12 +115,14 @@ Core idea:
 - one voice -> distributed echoes
 - signal -> node -> network
 
-Suggested symbol directions:
+Suggested directions:
 
-- a single beacon with outward signal rings
-- a node network forming a shield
-- an `S` built from signal lines or path lines
-- a voice waveform simplified into a distribution mesh
+- signal waves / echo rings
+- mesh nodes / redundancy
+- beacon light
+- shield geometry
+- waveform simplified into a network
+- path / direction line
 
 ## Color Direction
 
@@ -113,30 +131,13 @@ Primary palette direction:
 - deep navy for trust and stability
 - teal for signal, clarity, and calm
 - safety orange for urgency and action
-- white or light neutral background for readability
+- light neutrals for readability
 
 Avoid:
 
 - overly playful palettes
 - neon-heavy cyber styling
 - generic purple startup gradients
-
-## Product Copy Rules
-
-Emphasize:
-
-- offline
-- local
-- shareable
-- survival guidance
-- first 72 hours
-- nearby distribution
-
-Avoid centering the product as:
-
-- just a chatbot
-- just a phone app
-- just a Gemma demo
 
 ## Attribution Note
 
@@ -149,4 +150,3 @@ Preferred attribution:
 Or:
 
 > Built with Gemma 4 for offline emergency guidance
-

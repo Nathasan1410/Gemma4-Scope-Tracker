@@ -575,9 +575,6 @@ export default function Home() {
                 </>
               )}
 
-              <footer className="mt-8 text-xs text-zinc-500">
-                Stored locally in your browser (`localStorage`). No accounts, no server.
-              </footer>
             </div>
           </section>
         </main>

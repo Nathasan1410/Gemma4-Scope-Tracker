@@ -1,6 +1,6 @@
 import type { TaskStatus } from "@/lib/scope-data";
 
-const STORAGE_KEY = "scope-tracker:v1";
+export const STORAGE_KEY = "scope-tracker:v1";
 
 export type StoredState = {
   taskStatusById: Record<string, TaskStatus>;
@@ -42,4 +42,3 @@ export function saveStoredState(state: StoredState) {
     // Ignore quota/security errors; this is a tiny personal tracker.
   }
 }
-

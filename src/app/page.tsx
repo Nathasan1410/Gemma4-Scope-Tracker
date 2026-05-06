@@ -10,6 +10,7 @@ import { SegmentAccordion } from "@/components/SegmentAccordion";
 import { ProjectBriefAccordion } from "@/components/ProjectBriefAccordion";
 
 type TrackerTab = "roadmap" | "phases";
+type SyncMode = "loading" | "local" | "shared";
 
 function buildDefaultStatusMap(sections: Section[]) {
   const map: Record<string, TaskStatus> = {};
@@ -27,21 +28,74 @@ export default function Home() {
   const [selectedRoadmapId, setSelectedRoadmapId] = useState<string>(SECTIONS[0]?.id ?? "");
   const [selectedPhaseId, setSelectedPhaseId] = useState<string>(DEV_PHASES[0]?.id ?? "");
   const [showAllPriorities, setShowAllPriorities] = useState(false);
+  const [syncMode, setSyncMode] = useState<SyncMode>("loading");
   const [statusById, setStatusById] = useState<Record<string, TaskStatus>>(() =>
     buildDefaultStatusMap([...SECTIONS, ...DEV_PHASES]),
   );
 
   useEffect(() => {
     const stored = loadStoredState();
-    if (!stored) return;
-    // Loading persisted client state on mount is a legitimate effect; keep it simple for this personal tracker.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setStatusById((prev) => ({ ...prev, ...stored.taskStatusById }));
+    if (stored) {
+      // Loading persisted client state on mount is a legitimate effect; keep it simple for this personal tracker.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setStatusById((prev) => ({ ...prev, ...stored.taskStatusById }));
+    }
+
+    let cancelled = false;
+
+    async function loadSharedState() {
+      try {
+        const response = await fetch("/api/tracker-state", {
+          cache: "no-store",
+        });
+        const data = (await response.json()) as {
+          mode?: "local" | "shared";
+          state?: { taskStatusById?: Record<string, TaskStatus> } | null;
+        };
+
+        if (cancelled) return;
+
+        setSyncMode(data.mode === "shared" ? "shared" : "local");
+        if (data.state?.taskStatusById) {
+          setStatusById((prev) => ({ ...prev, ...data.state!.taskStatusById }));
+        }
+      } catch {
+        if (!cancelled) setSyncMode("local");
+      }
+    }
+
+    void loadSharedState();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
     saveStoredState({ taskStatusById: statusById, updatedAt: new Date().toISOString() });
   }, [statusById]);
+
+  useEffect(() => {
+    if (syncMode !== "shared") return;
+
+    const interval = window.setInterval(async () => {
+      try {
+        const response = await fetch("/api/tracker-state", { cache: "no-store" });
+        const data = (await response.json()) as {
+          mode?: "local" | "shared";
+          state?: { taskStatusById?: Record<string, TaskStatus> } | null;
+        };
+        if (data.mode !== "shared" || !data.state?.taskStatusById) return;
+        setStatusById((prev) => ({ ...prev, ...data.state!.taskStatusById }));
+      } catch {
+        // Keep current local state if the shared refresh fails.
+      }
+    }, 15000);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [syncMode]);
 
   const activeSections = activeTab === "roadmap" ? SECTIONS : DEV_PHASES;
   const selectedSectionId = activeTab === "roadmap" ? selectedRoadmapId : selectedPhaseId;
@@ -78,6 +132,33 @@ export default function Home() {
     return { notStarted, inProgress, done };
   }, [visibleTasks, statusById]);
 
+  function updateTaskStatus(taskId: string, next: TaskStatus) {
+    setStatusById((prev) => ({ ...prev, [taskId]: next }));
+
+    if (syncMode !== "shared") return;
+
+    void fetch("/api/tracker-state", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ taskId, status: next }),
+    })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return (await response.json()) as {
+          state?: { taskStatusById?: Record<string, TaskStatus> } | null;
+        };
+      })
+      .then((data) => {
+        if (!data?.state?.taskStatusById) return;
+        setStatusById((prev) => ({ ...prev, ...data.state!.taskStatusById }));
+      })
+      .catch(() => {
+        // Keep local state if shared sync fails.
+      });
+  }
+
   return (
     <div className="min-h-dvh bg-[radial-gradient(1200px_600px_at_20%_-10%,#f4f4f5,transparent),radial-gradient(900px_500px_at_90%_0%,#e4e4e7,transparent),linear-gradient(to_bottom,#fafafa,#f4f4f5)]">
       <div className="mx-auto flex h-dvh w-full max-w-6xl flex-col px-4 py-8">
@@ -102,6 +183,12 @@ export default function Home() {
                 {showAllPriorities ? "Showing: P0+P1+P2" : "Showing: P0 only"}
               </button>
             </div>
+          </div>
+          <div className="text-xs text-zinc-500">
+            Sync:{" "}
+            <span className="font-medium text-zinc-700">
+              {syncMode === "loading" ? "checking" : syncMode === "shared" ? "shared" : "local only"}
+            </span>
           </div>
           <div className="flex w-fit rounded-xl border border-zinc-200 bg-white p-1">
             <button
@@ -177,7 +264,7 @@ export default function Home() {
                       contextTitle={selectedSection.title}
                       statusById={statusById}
                       defaultOpen
-                      onChangeTaskStatus={(taskId, next) => setStatusById((prev) => ({ ...prev, [taskId]: next }))}
+                      onChangeTaskStatus={updateTaskStatus}
                     />
                     <SegmentAccordion
                       title="On progress"
@@ -185,7 +272,7 @@ export default function Home() {
                       tasks={tasksByStatus.inProgress}
                       contextTitle={selectedSection.title}
                       statusById={statusById}
-                      onChangeTaskStatus={(taskId, next) => setStatusById((prev) => ({ ...prev, [taskId]: next }))}
+                      onChangeTaskStatus={updateTaskStatus}
                     />
                     <SegmentAccordion
                       title="Completed"
@@ -193,7 +280,7 @@ export default function Home() {
                       tasks={tasksByStatus.done}
                       contextTitle={selectedSection.title}
                       statusById={statusById}
-                      onChangeTaskStatus={(taskId, next) => setStatusById((prev) => ({ ...prev, [taskId]: next }))}
+                      onChangeTaskStatus={updateTaskStatus}
                     />
                   </div>
                 </>

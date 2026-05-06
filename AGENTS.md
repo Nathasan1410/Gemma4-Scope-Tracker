@@ -30,6 +30,7 @@ Single-page project tracker:
   - If `briefMd` is missing, the UI generates a default PRD-aware brief from task title, note, priority, and phase.
   - Human-readable mirror: `DEV_PHASES.md` (optional, keep in sync).
 - Keep every `task.id` stable across both files; local persistence keys use task ids.
+- When roadmap or phase content changes, update `TRACKER_CHANGELOG.md` with the added/removed/moved tasks.
 
 ## Project Brief Markdown
 
@@ -41,6 +42,7 @@ Single-page project tracker:
 
 - Stored in browser `localStorage` under key `scope-tracker:v1` (see `src/lib/storage.ts`).
 - If you rename task ids, users will "lose" status for those tasks (because keys changed).
+- When `BLOB_READ_WRITE_TOKEN` is present in the deployed Vercel project, `/api/tracker-state` enables shared state across devices using Vercel Blob snapshots.
 
 ## Barebone / Empty Version
 

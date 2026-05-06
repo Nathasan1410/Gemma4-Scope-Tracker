@@ -7,6 +7,7 @@ export type Task = {
   title: string;
   note: string;
   briefMd?: string; // optional markdown shown in per-task accordion
+  defaultStatus?: TaskStatus; // optional initial status for a fresh browser
   priority: Priority;
 };
 

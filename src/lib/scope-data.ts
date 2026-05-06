@@ -7,6 +7,7 @@ export type Task = {
   title: string;
   note: string;
   briefMd?: string;
+  defaultStatus?: TaskStatus;
   priority: Priority;
 };
 

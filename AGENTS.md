@@ -12,17 +12,22 @@ Repo root: `C:\Nael-Hackathon\Scope-Tracker`
 
 Single-page project tracker:
 
-- Left: list of section cards (each shows KPI `done/total`)
-- Right: segmented accordion (Not done yet / On progress / Completed)
+- Tab 1: **Roadmap Progress** sourced from `src/lib/scope-data.ts`
+- Tab 2: **Development Phases** sourced from `src/lib/dev-phases.ts`
+- Each tab shows section cards + segmented accordion (Not done yet / On progress / Completed)
 - Each task has a status dropdown that auto-saves instantly (no save button)
 
 ## Where To Edit Data
 
-- Main data file: `src/lib/scope-data.ts`
-  - Edit `export const SECTIONS` to add/remove sections and tasks.
-  - Keep `task.id` stable; local persistence keys use task ids.
-- Human-readable mirror: `SCOPE.md`
-  - Optional; keep in sync with `scope-data.ts` for non-dev editing.
+- Roadmap tab data: `src/lib/scope-data.ts`
+  - Edit `export const SECTIONS` to add/remove roadmap sections and tasks.
+  - Per-task detail markdown: set `task.briefMd` (optional) on each task.
+  - Human-readable mirror: `SCOPE.md` (optional, keep in sync).
+- Development Phases tab data: `src/lib/dev-phases.ts`
+  - Edit `export const DEV_PHASES` to add/remove phase sections and tasks.
+  - Per-task detail markdown: set `task.briefMd` (optional) on each task.
+  - Human-readable mirror: `DEV_PHASES.md` (optional, keep in sync).
+- Keep every `task.id` stable across both files; local persistence keys use task ids.
 
 ## Project Brief Markdown
 

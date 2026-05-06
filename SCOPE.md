@@ -1,6 +1,6 @@
-# Scope Tracker Data (Editable)
+# Roadmap Progress Data (Editable)
 
-This file mirrors the **current scope list** shown in the UI.
+This file mirrors the **Roadmap Progress** tab shown in the UI.
 
 **Priority legend**
 
@@ -11,10 +11,11 @@ This file mirrors the **current scope list** shown in the UI.
 
 ## Where This Lives In Code
 
-- Data source (edit this to change the app content): [src/lib/scope-data.ts](C:/Nael-Hackathon/Scope-Tracker/src/lib/scope-data.ts)
+- Roadmap data source (edit this to change this tab): [src/lib/scope-data.ts](C:/Nael-Hackathon/Scope-Tracker/src/lib/scope-data.ts)
   - `export const SECTIONS: Section[] = [...]`
-- UI consumes it here: [src/app/page.tsx](C:/Nael-Hackathon/Scope-Tracker/src/app/page.tsx)
-  - imports `SECTIONS` and renders cards + segmented accordions
+- Per-task detail markdown: `task.briefMd` in each task object inside `SECTIONS`
+- Other tab data source: [src/lib/dev-phases.ts](C:/Nael-Hackathon/Scope-Tracker/src/lib/dev-phases.ts) (`DEV_PHASES`)
+- Project-level brief markdown: [public/brief.md](C:/Nael-Hackathon/Scope-Tracker/public/brief.md)
 
 ## 1) App Development
 
@@ -128,4 +129,3 @@ Fokus: submission kebaca solid.
 | P0 | Demo script | Airplane mode → ask → share QR → survival book. |
 | P1 | Model card | Model, quantization, limitation. |
 | P1 | Safety design doc | Limits dan risk mitigation. |
-

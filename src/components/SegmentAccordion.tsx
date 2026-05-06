@@ -9,6 +9,7 @@ export function SegmentAccordion({
   title,
   status,
   tasks,
+  contextTitle,
   statusById,
   defaultOpen,
   onChangeTaskStatus,
@@ -16,6 +17,7 @@ export function SegmentAccordion({
   title: string;
   status: TaskStatus;
   tasks: Task[];
+  contextTitle: string;
   statusById: Record<string, TaskStatus>;
   defaultOpen?: boolean;
   onChangeTaskStatus: (taskId: string, next: TaskStatus) => void;
@@ -45,12 +47,13 @@ export function SegmentAccordion({
               </div>
             ) : (
               tasks.map((t) => (
-                <TaskRow
-                  key={t.id}
-                  task={t}
-                  status={statusById[t.id] ?? "not_started"}
-                  onChangeStatus={(next) => onChangeTaskStatus(t.id, next)}
-                />
+              <TaskRow
+                key={t.id}
+                task={t}
+                contextTitle={contextTitle}
+                status={statusById[t.id] ?? "not_started"}
+                onChangeStatus={(next) => onChangeTaskStatus(t.id, next)}
+              />
               ))
             )}
           </div>

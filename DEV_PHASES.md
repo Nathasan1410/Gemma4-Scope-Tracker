@@ -7,6 +7,7 @@ This file mirrors the **Development Phases** tab shown in the UI.
 - Phase data source (edit this to change this tab): [src/lib/dev-phases.ts](C:/Nael-Hackathon/Scope-Tracker/src/lib/dev-phases.ts)
   - `export const DEV_PHASES: Section[] = [...]`
 - Per-task detail markdown: `task.briefMd` in each task object inside `DEV_PHASES`
+- If `task.briefMd` is empty/missing, the UI generates a PRD-aware default brief from the task data.
 - Other tab data source: [src/lib/scope-data.ts](C:/Nael-Hackathon/Scope-Tracker/src/lib/scope-data.ts) (`SECTIONS`)
 - Project-level brief markdown: [public/brief.md](C:/Nael-Hackathon/Scope-Tracker/public/brief.md)
 

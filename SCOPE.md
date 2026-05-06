@@ -14,6 +14,7 @@ This file mirrors the **Roadmap Progress** tab shown in the UI.
 - Roadmap data source (edit this to change this tab): [src/lib/scope-data.ts](C:/Nael-Hackathon/Scope-Tracker/src/lib/scope-data.ts)
   - `export const SECTIONS: Section[] = [...]`
 - Per-task detail markdown: `task.briefMd` in each task object inside `SECTIONS`
+- If `task.briefMd` is empty/missing, the UI generates a PRD-aware default brief from the task data.
 - Other tab data source: [src/lib/dev-phases.ts](C:/Nael-Hackathon/Scope-Tracker/src/lib/dev-phases.ts) (`DEV_PHASES`)
 - Project-level brief markdown: [public/brief.md](C:/Nael-Hackathon/Scope-Tracker/public/brief.md)
 

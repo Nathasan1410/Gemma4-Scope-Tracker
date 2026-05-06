@@ -174,6 +174,7 @@ export default function Home() {
                       title="Not done yet"
                       status="not_started"
                       tasks={tasksByStatus.notStarted}
+                      contextTitle={selectedSection.title}
                       statusById={statusById}
                       defaultOpen
                       onChangeTaskStatus={(taskId, next) => setStatusById((prev) => ({ ...prev, [taskId]: next }))}
@@ -182,6 +183,7 @@ export default function Home() {
                       title="On progress"
                       status="in_progress"
                       tasks={tasksByStatus.inProgress}
+                      contextTitle={selectedSection.title}
                       statusById={statusById}
                       onChangeTaskStatus={(taskId, next) => setStatusById((prev) => ({ ...prev, [taskId]: next }))}
                     />
@@ -189,6 +191,7 @@ export default function Home() {
                       title="Completed"
                       status="done"
                       tasks={tasksByStatus.done}
+                      contextTitle={selectedSection.title}
                       statusById={statusById}
                       onChangeTaskStatus={(taskId, next) => setStatusById((prev) => ({ ...prev, [taskId]: next }))}
                     />

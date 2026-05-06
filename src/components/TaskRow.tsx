@@ -2,6 +2,7 @@ import type { Task, TaskStatus } from "@/lib/scope-data";
 import { PriorityPill } from "@/components/PriorityPill";
 import { MarkdownBlock } from "@/components/MarkdownBlock";
 import { useState } from "react";
+import { buildTaskBriefMd } from "@/lib/task-brief";
 
 const STATUS_LABEL: Record<TaskStatus, string> = {
   not_started: "Not done",
@@ -11,16 +12,18 @@ const STATUS_LABEL: Record<TaskStatus, string> = {
 
 export function TaskRow({
   task,
+  contextTitle,
   status,
   onChangeStatus,
 }: {
   task: Task;
+  contextTitle: string;
   status: TaskStatus;
   onChangeStatus: (next: TaskStatus) => void;
 }) {
   const muted = task.priority === "CUT";
   const [openBrief, setOpenBrief] = useState(false);
-  const hasBrief = Boolean(task.briefMd && task.briefMd.trim().length > 0);
+  const briefMd = task.briefMd?.trim() || buildTaskBriefMd(task, contextTitle);
 
   return (
     <div
@@ -71,20 +74,13 @@ export function TaskRow({
           aria-controls={`brief-${task.id}`}
         >
           {openBrief ? "Hide brief" : "Show brief"}
-          <span className="text-zinc-500">{hasBrief ? "MD" : "empty"}</span>
+          <span className="text-zinc-500">MD</span>
         </button>
       </div>
 
       {openBrief ? (
         <div id={`brief-${task.id}`} className="mt-3 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-3">
-          {hasBrief ? (
-            <MarkdownBlock md={task.briefMd!} />
-          ) : (
-            <div className="text-xs text-zinc-500">
-              No brief yet. Add <span className="font-medium text-zinc-700">briefMd</span> for this task in{" "}
-              <span className="font-medium text-zinc-700">src/lib/scope-data.ts</span>.
-            </div>
-          )}
+          <MarkdownBlock md={briefMd} />
         </div>
       ) : null}
     </div>

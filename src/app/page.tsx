@@ -8,9 +8,8 @@ import { loadStoredState, saveStoredState } from "@/lib/storage";
 import { ScopeCard } from "@/components/ScopeCard";
 import { SegmentAccordion } from "@/components/SegmentAccordion";
 import { ProjectBriefAccordion } from "@/components/ProjectBriefAccordion";
-import { TrackerChangelogAccordion } from "@/components/TrackerChangelogAccordion";
 
-type TrackerTab = "roadmap" | "phases";
+type TrackerTab = "roadmap" | "phases" | "changelog";
 type SyncMode = "loading" | "local" | "shared";
 
 function buildDefaultStatusMap(sections: Section[]) {
@@ -24,10 +23,90 @@ function filterTasks(tasks: Task[], opts: { showAllPriorities: boolean }) {
   return tasks.filter((t) => t.priority === "P0");
 }
 
+type ChangelogEntry = {
+  id: string; // usually date
+  date: string; // YYYY-MM-DD
+  title?: string;
+  summary: string;
+  sections: {
+    added: string[];
+    changed: string[];
+    removed: string[];
+    notes: string[];
+  };
+};
+
+function parseChangelog(md: string): ChangelogEntry[] {
+  const lines = md.split(/\r?\n/);
+  const entries: ChangelogEntry[] = [];
+
+  let current: ChangelogEntry | null = null;
+  let currentSection: keyof ChangelogEntry["sections"] | null = null;
+
+  const pushCurrent = () => {
+    if (!current) return;
+    // derive a one-line summary from the first non-empty bullet across sections
+    const first =
+      current.sections.added[0] ??
+      current.sections.changed[0] ??
+      current.sections.removed[0] ??
+      current.sections.notes[0] ??
+      "";
+    const summary = (current.title && current.title.trim().length > 0 ? current.title.trim() : first.trim()) || "Update";
+    current.summary = summary;
+    entries.push(current);
+  };
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (line.length === 0) continue;
+
+    const h2 = line.match(/^##\s+(\d{4}-\d{2}-\d{2})(?:\s+(.*))?$/);
+    if (h2) {
+      pushCurrent();
+      current = {
+        id: h2[1],
+        date: h2[1],
+        title: h2[2]?.trim() || undefined,
+        summary: "",
+        sections: { added: [], changed: [], removed: [], notes: [] },
+      };
+      currentSection = null;
+      continue;
+    }
+
+    if (!current) continue;
+
+    const h3 = line.match(/^###\s+(.*)$/);
+    if (h3) {
+      const label = h3[1].toLowerCase();
+      if (label.includes("added")) currentSection = "added";
+      else if (label.includes("changed")) currentSection = "changed";
+      else if (label.includes("removed")) currentSection = "removed";
+      else currentSection = "notes";
+      continue;
+    }
+
+    const bullet = line.match(/^-+\s+(.*)$/);
+    if (bullet) {
+      const text = bullet[1].trim();
+      const target = currentSection ?? "notes";
+      current.sections[target].push(text);
+      continue;
+    }
+  }
+
+  pushCurrent();
+
+  return entries.sort((a, b) => b.date.localeCompare(a.date));
+}
+
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TrackerTab>("roadmap");
   const [selectedRoadmapId, setSelectedRoadmapId] = useState<string>(SECTIONS[0]?.id ?? "");
   const [selectedPhaseId, setSelectedPhaseId] = useState<string>(DEV_PHASES[0]?.id ?? "");
+  const [changelogEntries, setChangelogEntries] = useState<ChangelogEntry[]>([]);
+  const [selectedChangelogId, setSelectedChangelogId] = useState<string>("");
   const [showAllPriorities, setShowAllPriorities] = useState(false);
   const [syncMode, setSyncMode] = useState<SyncMode>("loading");
   const [statusById, setStatusById] = useState<Record<string, TaskStatus>>(() =>
@@ -67,6 +146,25 @@ export default function Home() {
 
     void loadSharedState();
 
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/tracker-changelog", { cache: "no-store" });
+        const md = await res.text();
+        if (cancelled) return;
+        const parsed = parseChangelog(md);
+        setChangelogEntries(parsed);
+        setSelectedChangelogId((prev) => prev || parsed[0]?.id || "");
+      } catch {
+        if (!cancelled) setChangelogEntries([]);
+      }
+    })();
     return () => {
       cancelled = true;
     };
@@ -193,6 +291,17 @@ export default function Home() {
                 >
                   Phases
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("changelog")}
+                  className={[
+                    "h-8 rounded-full px-3 text-xs font-semibold transition",
+                    activeTab === "changelog" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-50",
+                  ].join(" ")}
+                  aria-pressed={activeTab === "changelog"}
+                >
+                  Changelog
+                </button>
               </div>
               <button
                 type="button"
@@ -218,7 +327,38 @@ export default function Home() {
           <section className="min-h-0">
             <div className="h-full rounded-3xl border border-zinc-200 bg-white/60 p-3 backdrop-blur">
               <div className="h-full overflow-auto pr-1">
-                {activeSections.length === 0 ? (
+                {activeTab === "changelog" ? (
+                  changelogEntries.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-zinc-200 bg-white px-4 py-5 text-sm text-zinc-600">
+                      No changelog entries yet. Edit <span className="font-medium text-zinc-900">TRACKER_CHANGELOG.md</span>.
+                    </div>
+                  ) : (
+                    <div className="grid gap-3">
+                      {changelogEntries.map((e) => (
+                        <button
+                          key={e.id}
+                          type="button"
+                          onClick={() => setSelectedChangelogId(e.id)}
+                          className={[
+                            "w-full rounded-2xl border p-4 text-left transition",
+                            "bg-white hover:bg-zinc-50",
+                            e.id === selectedChangelogId ? "border-zinc-900 ring-2 ring-zinc-900/10" : "border-zinc-200",
+                          ].join(" ")}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="text-sm font-semibold text-zinc-900">{e.date}</div>
+                              <div className="mt-1 text-xs leading-5 text-zinc-600">{e.summary}</div>
+                            </div>
+                            <div className="shrink-0 rounded-xl bg-zinc-900 px-3 py-2 text-[11px] font-semibold text-white">
+                              {e.sections.added.length + e.sections.changed.length + e.sections.removed.length}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )
+                ) : activeSections.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-zinc-200 bg-white px-4 py-5 text-sm text-zinc-600">
                     No sections yet. Add them in <span className="font-medium text-zinc-900">{dataFile}</span>.
                   </div>
@@ -242,7 +382,53 @@ export default function Home() {
 
           <section className="min-h-0">
             <div className="h-full overflow-auto rounded-3xl border border-zinc-200 bg-white/70 p-5 backdrop-blur">
-              {!selectedSection ? (
+              {activeTab === "changelog" ? (
+                (() => {
+                  const entry = changelogEntries.find((e) => e.id === selectedChangelogId) ?? changelogEntries[0];
+                  if (!entry) {
+                    return (
+                      <div className="rounded-2xl border border-dashed border-zinc-200 bg-white px-4 py-5 text-sm text-zinc-600">
+                        Pick a date on the left.
+                      </div>
+                    );
+                  }
+
+                  const SectionBlock = ({ title, items }: { title: string; items: string[] }) => {
+                    if (items.length === 0) return null;
+                    return (
+                      <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+                        <div className="text-sm font-semibold text-zinc-900">{title}</div>
+                        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-zinc-700">
+                          {items.map((it, idx) => (
+                            <li key={`${title}-${idx}`}>{it}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    );
+                  };
+
+                  return (
+                    <>
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <div className="text-lg font-semibold text-zinc-900">{entry.date}</div>
+                          <div className="mt-1 text-sm text-zinc-600">{entry.summary}</div>
+                        </div>
+                        <div className="shrink-0 rounded-2xl border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-700">
+                          {entry.sections.added.length + entry.sections.changed.length + entry.sections.removed.length} changes
+                        </div>
+                      </div>
+
+                      <div className="mt-5 grid gap-3">
+                        <SectionBlock title="Added" items={entry.sections.added} />
+                        <SectionBlock title="Changed" items={entry.sections.changed} />
+                        <SectionBlock title="Removed" items={entry.sections.removed} />
+                        <SectionBlock title="Notes" items={entry.sections.notes} />
+                      </div>
+                    </>
+                  );
+                })()
+              ) : !selectedSection ? (
                 <div className="rounded-2xl border border-dashed border-zinc-200 bg-white px-4 py-5 text-sm text-zinc-600">
                   Pick a section on the left (or add one in <span className="font-medium text-zinc-900">{dataFile}</span>).
                 </div>
@@ -254,7 +440,6 @@ export default function Home() {
                   </div>
 
                   <div className="mt-5 grid gap-3">
-                    <TrackerChangelogAccordion />
                     <ProjectBriefAccordion />
                     <SegmentAccordion
                       title="Not done yet"

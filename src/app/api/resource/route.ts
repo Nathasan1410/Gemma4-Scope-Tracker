@@ -9,6 +9,13 @@ const RESOURCE_MAP: Record<string, string> = {
   scope: "SCOPE.md",
   "dev-phases": "DEV_PHASES.md",
   "tracker-changelog": "TRACKER_CHANGELOG.md",
+  "project-knowledge": "PROJECT_KNOWLEDGE.md",
+  "package-strategy": "PACKAGE_STRATEGY.md",
+  "special-tracks": "SPECIAL_TRACKS.md",
+  "technical-depth": "TECHNICAL_DEPTH.md",
+  "model-runtime": "MODEL_RUNTIME.md",
+  "knowledge-strategy": "KNOWLEDGE_STRATEGY.md",
+  glossary: "GLOSSARY.md",
 };
 
 export async function GET(request: NextRequest) {

@@ -5,12 +5,13 @@ import type { Section, Task, TaskStatus } from "@/lib/scope-data";
 import { SECTIONS } from "@/lib/scope-data";
 import { DEV_PHASES } from "@/lib/dev-phases";
 import { loadStoredState, saveStoredState } from "@/lib/storage";
+import type { Report } from "@/lib/reports";
 import { ScopeCard } from "@/components/ScopeCard";
 import { SegmentAccordion } from "@/components/SegmentAccordion";
 import { ProjectBriefAccordion } from "@/components/ProjectBriefAccordion";
 import { MarkdownBlock } from "@/components/MarkdownBlock";
 
-type TrackerTab = "roadmap" | "phases" | "changelog" | "resources";
+type TrackerTab = "roadmap" | "phases" | "reports" | "changelog" | "resources";
 type SyncMode = "loading" | "local" | "shared";
 
 function buildDefaultStatusMap(sections: Section[]) {
@@ -50,6 +51,13 @@ const RESOURCE_ITEMS: ResourceItem[] = [
   { id: "scope", title: "Roadmap Scope", subtitle: "Human-readable mirror of Roadmap Progress tab." },
   { id: "dev-phases", title: "Dev Phases", subtitle: "Human-readable mirror of Development Phases tab." },
   { id: "tracker-changelog", title: "Tracker Changelog", subtitle: "History of tracker content changes." },
+  { id: "project-knowledge", title: "Project Knowledge", subtitle: "Decisions, MVP scope, and how this repo works." },
+  { id: "package-strategy", title: "Package Strategy", subtitle: "Package types + MVP share/import vs roadmap robustness." },
+  { id: "special-tracks", title: "Special Tracks", subtitle: "LiteRT primary; Unsloth optional; host-node tracks roadmap." },
+  { id: "technical-depth", title: "Technical Depth", subtitle: "Why this is not just a chatbot; innovation rationale." },
+  { id: "model-runtime", title: "Model Runtime", subtitle: "Model selection, quantization targets, and honest runtime state." },
+  { id: "knowledge-strategy", title: "Knowledge Strategy", subtitle: "Survival pack categories, region priority, survival book." },
+  { id: "glossary", title: "Glossary", subtitle: "Terms: LiteRT, LoRA, quantization, packs, host mode, etc." },
 ];
 
 function parseChangelog(md: string): ChangelogEntry[] {
@@ -121,6 +129,9 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<TrackerTab>("roadmap");
   const [selectedRoadmapId, setSelectedRoadmapId] = useState<string>(SECTIONS[0]?.id ?? "");
   const [selectedPhaseId, setSelectedPhaseId] = useState<string>(DEV_PHASES[0]?.id ?? "");
+  const [reports, setReports] = useState<Report[]>([]);
+  const [selectedReportId, setSelectedReportId] = useState<string>("");
+  const [reportSaveStatus, setReportSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [changelogEntries, setChangelogEntries] = useState<ChangelogEntry[]>([]);
   const [selectedChangelogId, setSelectedChangelogId] = useState<string>("");
   const [selectedResourceId, setSelectedResourceId] = useState<string>(RESOURCE_ITEMS[0]?.id ?? "");
@@ -149,7 +160,7 @@ export default function Home() {
         });
         const data = (await response.json()) as {
           mode?: "local" | "shared";
-          state?: { taskStatusById?: Record<string, TaskStatus> } | null;
+          state?: { taskStatusById?: Record<string, TaskStatus>; reports?: Report[] } | null;
         };
 
         if (cancelled) return;
@@ -157,6 +168,10 @@ export default function Home() {
         setSyncMode(data.mode === "shared" ? "shared" : "local");
         if (data.state?.taskStatusById) {
           setStatusById((prev) => ({ ...prev, ...data.state!.taskStatusById }));
+        }
+        if (data.state?.reports) {
+          setReports(data.state.reports);
+          setSelectedReportId((prev) => prev || data.state!.reports?.[0]?.id || "");
         }
       } catch {
         if (!cancelled) setSyncMode("local");
@@ -222,10 +237,15 @@ export default function Home() {
         const response = await fetch("/api/tracker-state", { cache: "no-store" });
         const data = (await response.json()) as {
           mode?: "local" | "shared";
-          state?: { taskStatusById?: Record<string, TaskStatus> } | null;
+          state?: { taskStatusById?: Record<string, TaskStatus>; reports?: Report[] } | null;
         };
-        if (data.mode !== "shared" || !data.state?.taskStatusById) return;
-        setStatusById((prev) => ({ ...prev, ...data.state!.taskStatusById }));
+        if (data.mode !== "shared" || !data.state) return;
+        if (data.state.taskStatusById) {
+          setStatusById((prev) => ({ ...prev, ...data.state!.taskStatusById }));
+        }
+        if (data.state.reports) {
+          setReports(data.state.reports);
+        }
       } catch {
         // Keep current local state if the shared refresh fails.
       }
@@ -271,6 +291,37 @@ export default function Home() {
     return { notStarted, inProgress, done };
   }, [visibleTasks, statusById]);
 
+  function pushReportToShared(report: Report) {
+    if (syncMode !== "shared") return;
+    setReportSaveStatus("saving");
+    void fetch("/api/tracker-state", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ report }),
+    })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return (await response.json()) as {
+          state?: { taskStatusById?: Record<string, TaskStatus>; reports?: Report[] } | null;
+        };
+      })
+      .then((data) => {
+        if (!data?.state) return;
+        if (data.state.taskStatusById) {
+          setStatusById((prev) => ({ ...prev, ...data.state!.taskStatusById }));
+        }
+        if (data.state.reports) {
+          setReports(data.state.reports);
+        }
+        setReportSaveStatus("saved");
+      })
+      .catch(() => {
+        setReportSaveStatus("error");
+      });
+  }
+
   function updateTaskStatus(taskId: string, next: TaskStatus) {
     setStatusById((prev) => ({ ...prev, [taskId]: next }));
 
@@ -296,6 +347,35 @@ export default function Home() {
       .catch(() => {
         // Keep local state if shared sync fails.
       });
+  }
+
+  function createNewReport() {
+    const iso = new Date().toISOString();
+    const date = iso.slice(0, 10);
+    const id = `rep_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+    const title = `Report ${date}`;
+    const next: Report = {
+      id,
+      title,
+      md: `# ${title}\n\n- `,
+      createdAt: iso,
+      updatedAt: iso,
+    };
+    setReports((prev) => [next, ...prev]);
+    setSelectedReportId(id);
+    pushReportToShared(next);
+  }
+
+  function updateReport(reportId: string, patch: { title?: string; md?: string }) {
+    const nowIso = new Date().toISOString();
+    let nextReport: Report | null = null;
+    setReports((prev) => {
+      const current = prev.find((r) => r.id === reportId);
+      if (!current) return prev;
+      nextReport = { ...current, ...patch, updatedAt: nowIso };
+      return prev.map((r) => (r.id === reportId ? nextReport! : r));
+    });
+    if (nextReport) pushReportToShared(nextReport);
   }
 
   return (
@@ -330,6 +410,17 @@ export default function Home() {
                   aria-pressed={activeTab === "phases"}
                 >
                   Phases
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("reports")}
+                  className={[
+                    "h-8 rounded-full px-3 text-xs font-semibold transition",
+                    activeTab === "reports" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-50",
+                  ].join(" ")}
+                  aria-pressed={activeTab === "reports"}
+                >
+                  Reports
                 </button>
                 <button
                   type="button"
@@ -426,6 +517,58 @@ export default function Home() {
                         <div className="mt-1 text-xs leading-5 text-zinc-600">{r.subtitle}</div>
                       </button>
                     ))}
+                  </div>
+                ) : activeTab === "reports" ? (
+                  <div className="grid gap-3">
+                    <div className="flex items-center justify-between gap-3 px-1">
+                      <div className="text-xs font-semibold text-zinc-700">Reports</div>
+                      <button
+                        type="button"
+                        onClick={createNewReport}
+                        className="h-9 rounded-full border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-900 hover:bg-zinc-50"
+                      >
+                        + New
+                      </button>
+                    </div>
+
+                    {reports.length === 0 ? (
+                      <div className="rounded-2xl border border-dashed border-zinc-200 bg-white px-4 py-5 text-sm text-zinc-600">
+                        No reports yet. Click <span className="font-medium text-zinc-900">+ New</span> to start one.
+                      </div>
+                    ) : (
+                      <div className="grid gap-3">
+                        {reports.map((r) => {
+                          const summary =
+                            r.md
+                              .split(/\r?\n/)
+                              .map((l) => l.trim())
+                              .find((l) => l.length > 0 && !l.startsWith("#")) ?? "Markdown report";
+                          const shortDate = r.updatedAt.slice(0, 10);
+                          return (
+                            <button
+                              key={r.id}
+                              type="button"
+                              onClick={() => setSelectedReportId(r.id)}
+                              className={[
+                                "w-full rounded-2xl border p-4 text-left transition",
+                                "bg-white hover:bg-zinc-50",
+                                r.id === selectedReportId ? "border-zinc-900 ring-2 ring-zinc-900/10" : "border-zinc-200",
+                              ].join(" ")}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <div className="text-sm font-semibold text-zinc-900">{r.title || "Untitled report"}</div>
+                                  <div className="mt-1 text-xs leading-5 text-zinc-600">{summary}</div>
+                                </div>
+                                <div className="shrink-0 rounded-xl bg-zinc-900 px-3 py-2 text-[11px] font-semibold text-white">
+                                  {shortDate}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 ) : activeSections.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-zinc-200 bg-white px-4 py-5 text-sm text-zinc-600">
@@ -533,6 +676,91 @@ export default function Home() {
                     )}
                   </div>
                 </>
+              ) : activeTab === "reports" ? (
+                (() => {
+                  const report = reports.find((r) => r.id === selectedReportId) ?? reports[0];
+                  if (!report) {
+                    return (
+                      <div className="rounded-2xl border border-dashed border-zinc-200 bg-white px-4 py-5 text-sm text-zinc-600">
+                        No reports yet. Create one from the left panel.
+                      </div>
+                    );
+                  }
+
+                  const statusLabel =
+                    reportSaveStatus === "saving"
+                      ? "Syncing…"
+                      : reportSaveStatus === "saved"
+                        ? "Synced"
+                        : reportSaveStatus === "error"
+                          ? "Sync failed"
+                          : "Not synced";
+
+                  return (
+                    <>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0 flex-1">
+                          <input
+                            value={report.title}
+                            onChange={(e) => updateReport(report.id, { title: e.target.value })}
+                            placeholder="Report title"
+                            className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-lg font-semibold text-zinc-900 outline-none focus:border-zinc-900"
+                          />
+                          <div className="mt-1 text-xs text-zinc-500">
+                            Updated {report.updatedAt.slice(0, 19).replace("T", " ")}
+                          </div>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <span className="rounded-full border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-700">
+                            {statusLabel}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={createNewReport}
+                            className="h-9 rounded-full border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-900 hover:bg-zinc-50"
+                          >
+                            + New
+                          </button>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                await navigator.clipboard.writeText(report.md);
+                              } catch {
+                                // ignore
+                              }
+                            }}
+                            className="h-9 rounded-full border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-900 hover:bg-zinc-50"
+                          >
+                            Copy MD
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+                        <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+                          <div className="text-xs font-semibold text-zinc-700">Write</div>
+                          <textarea
+                            value={report.md}
+                            onChange={(e) => updateReport(report.id, { md: e.target.value })}
+                            className="mt-3 min-h-[340px] w-full resize-y rounded-xl border border-zinc-200 bg-white px-3 py-2 font-mono text-xs text-zinc-900 outline-none focus:border-zinc-900"
+                            placeholder={"# What’s done so far\n\n- Shipped …\n- Fixed …\n- Next: …"}
+                          />
+                        </div>
+                        <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+                          <div className="text-xs font-semibold text-zinc-700">Preview</div>
+                          <div className="mt-3">
+                            {report.md.trim().length === 0 ? (
+                              <div className="text-sm text-zinc-600">Empty.</div>
+                            ) : (
+                              <MarkdownBlock md={report.md} />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()
               ) : !selectedSection ? (
                 <div className="rounded-2xl border border-dashed border-zinc-200 bg-white px-4 py-5 text-sm text-zinc-600">
                   Pick a section on the left (or add one in <span className="font-medium text-zinc-900">{dataFile}</span>).

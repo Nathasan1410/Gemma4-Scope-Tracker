@@ -12,23 +12,8 @@ QR payload size depends on:
 
 Reference capacity examples:
 
-- Version 40-L can hold up to ~2,953 bytes in **byte mode** (highest capacity class). See References.
-- Version 40-L can hold up to ~4,296 characters in **alphanumeric mode**. See References.
-- Max capacity depends on version + character type + error correction. See References.
-
-## Phase 2 Recommendation (Practical)
-
-Pick based on payload size + UX:
-
-1) **Single QR, human-readable** → **Option A: Compact Plaintext Card**
-2) **Single QR, structured + smaller than JSON** → **Option D-lite: Binary (CBOR) + Base45**
-3) **Larger than single QR** → **Multipart UR (CBOR + Bytewords + sequencing)** or **Structured Append** (standards-based)
-
-Why:
-
-- Plaintext cards keep overhead low and remain readable even outside Swara.
-- For structured data, encode binary then use an encoding designed for QR constraints (Base45).
-- For multi-QR, UR is a mature pattern for “airgapped QR transfer” UX with sequencing.
+- Version 40-L can hold up to ~2,953 bytes in **byte mode** (highest capacity class). citeturn0search5turn0search12
+- DENSO’s overview explains that max capacity depends on version + character type + error correction. citeturn0search3
 
 ## Option A (Best for Humans): Compact Plaintext “Card” Format
 
@@ -53,11 +38,6 @@ Pros:
 
 Cons:
 - limited richness (no tables/links unless you invent them)
-
-Notes:
-
-- Keep ASCII/uppercase if possible to avoid UTF-8 expansion and to help fit alphanumeric mode constraints.
-- Avoid long prose; prefer short steps and codes.
 
 ## Option B (Still Human-Friendly): Micro-Markup (Subset)
 
@@ -99,13 +79,8 @@ Approach:
 
 Encoding notes:
 
-- Base64 expands data by ~33% (typical).
-- Base45 is designed for QR alphanumeric mode use-cases (RFC 9285).
-
-Why Base45 usually wins for QR:
-
-- Base45 stays inside the QR **alphanumeric** character set, which often yields denser codes than encodings that force **byte mode**.
-- Base91 can be more space-efficient on paper, but it uses many punctuation characters; in practice that can reduce portability across scanners/apps and may not map cleanly to QR alphanumeric mode.
+- Base64 expands data by ~33%. citeturn0search13
+- Base45 is explicitly designed for QR alphanumeric mode use-cases (RFC 9285) and can be a better fit for QR constraints. citeturn0search9turn0search0
 
 Pros:
 - smallest payload for structured data
@@ -115,29 +90,11 @@ Cons:
 - not human-readable
 - needs an app decoder (fine for Swara app import)
 
-## Option E (Multi-QR, Scanner-Friendly): UR (CBOR + Bytewords + Multipart)
-
-UR (Uniform Resources) is a text format designed to transport structured binary data via URIs/QR:
-
-- UR uses **CBOR** and can be converted into **minimal Bytewords**; guidance suggests ALL CAPS for QR efficiency.
-- UR supports multipart / sequencing patterns (often used for “animated QRs” in airgapped transfer UX).
- 
-Pros:
-
-- strong precedent for QR-based transfer of structured data
-- works well when payload exceeds a single QR
-
-Cons:
-
-- needs encoder/decoder support in-app
-- payload is not human-readable
-
 ## Larger Than One QR: Multi-QR Sequences
 
 If payload cannot fit in a single QR:
 
-- Use **Structured Append** (up to 16 symbols) as the standards-based approach.
- - Structured Append is capped (commonly cited as up to 16 symbols).
+- Use **Structured Append** (up to 16 symbols) as the standards-based approach. citeturn0search4turn0search16
 
 Pros:
 - QR-only still works
@@ -156,10 +113,3 @@ If you later expand QR payload capability:
 
 These are “robustness” improvements; QR-only MVP should pick a simple, visible, bounded format first.
 
-## References
-
-- QR Code capacity overview (version, mode, error correction): `https://www.qrcode.com/en/about/version.html`
-- QR 40-L capacity table (including 2,953 bytes, 4,296 alphanumeric): `https://www.thonky.com/qr-code-tutorial/data-encoding`
-- Base45 spec (RFC 9285): `https://www.rfc-editor.org/rfc/rfc9285.html`
-- UR + Bytewords docs (multipart patterns, minimal encoding guidance): `https://developer.blockchaincommons.com/ur/` and `https://developer.blockchaincommons.com/bytewords/`
-- Structured Append limit (up to 16 symbols, ISO/IEC 18004): `https://nuintun.github.io/qrcode/packages/core/spec/ISO-IEC-18004-2015.pdf`

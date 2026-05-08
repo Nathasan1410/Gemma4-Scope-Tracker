@@ -18,6 +18,7 @@ const RESOURCE_MAP: Record<string, string> = {
   glossary: "GLOSSARY.md",
   "qr-findings": "QR_FINDINGS.md",
   "hotspot-findings": "HOTSPOT_FINDINGS.md",
+  "qr-distribution": "QR_DISTRIBUTION_FINDINGS.md",
 };
 
 export async function GET(request: NextRequest) {

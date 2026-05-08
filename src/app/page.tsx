@@ -58,8 +58,7 @@ const RESOURCE_ITEMS: ResourceItem[] = [
   { id: "model-runtime", title: "Model Runtime", subtitle: "Model selection, quantization targets, and honest runtime state." },
   { id: "knowledge-strategy", title: "Knowledge Strategy", subtitle: "Survival pack categories, region priority, survival book." },
   { id: "glossary", title: "Glossary", subtitle: "Terms: LiteRT, LoRA, quantization, packs, host mode, etc." },
-  { id: "qr-findings", title: "QR Findings", subtitle: "QR-only distribution constraints, size comparisons, and rules of thumb." },
-  { id: "hotspot-findings", title: "Hotspot Findings", subtitle: "QR→local URL pattern for fast viewing after brief LAN/hotspot connect." },
+  { id: "qr-distribution", title: "QR Distribution (Merged)", subtitle: "QR-only + hotspot findings, plus Swara-fit chat snippet sharing format." },
 ];
 
 function parseChangelog(md: string): ChangelogEntry[] {

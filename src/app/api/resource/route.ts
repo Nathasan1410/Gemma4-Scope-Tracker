@@ -16,6 +16,8 @@ const RESOURCE_MAP: Record<string, string> = {
   "model-runtime": "MODEL_RUNTIME.md",
   "knowledge-strategy": "KNOWLEDGE_STRATEGY.md",
   glossary: "GLOSSARY.md",
+  "qr-findings": "QR_FINDINGS.md",
+  "hotspot-findings": "HOTSPOT_FINDINGS.md",
 };
 
 export async function GET(request: NextRequest) {
